@@ -1,0 +1,229 @@
+enemy_color: "red"
+# enemy_color: "blue"
+
+# Armor numbers to ignore: 1 hero, 2 engineer, 3/4 infantry, 5 infantry, 6 sentry, 7 outpost, 8 base.
+ignore_num: []
+# Armor numbers to prefer; leave empty to keep the default target order.
+priority_num: []
+
+baud_rate: 921600
+
+#####-----navigation FDB relay-----#####
+navi_yaw_offset: 0.0 # same unit as yaw in /fdb     0.05度在吊射点为一块装甲板
+navi_pitch_offset: 0.0 # same unit as pitch in /fdb  1度在吊射点为一块装甲板
+
+#####-----神经网络参数-----#####
+yolo_name: yolov5
+classify_model: assets/tiny_resnet.onnx
+yolo11_model_path: assets/20260726last.xml
+yolov8_model_path: assets/yolov8.xml
+yolov5_model_path: assets/yolov5.xml
+device: GPU
+min_confidence: 0.65
+use_traditional: false
+fast_yolo_filter: true
+fast_yolo_geometry_filter: true
+fast_yolo_color_filter: false
+fast_yolo_min_light_ratio: 0.45
+fast_yolo_max_light_angle_diff: 18
+fast_yolo_color_dominance: 1.05
+fast_yolo_color_min_ratio: 0.35
+fast_yolo_color_stride: 2
+fast_yolo_color_min_samples: 4
+
+openvino_num_requests: 2
+openvino_preprocess_threads: 2
+openvino_postprocess_threads: 2
+openvino_result_queue_size: 2
+#####-----ROI-----#####
+roi: 
+  x: 420
+  y: 50
+  width: 600
+  height: 600
+
+use_roi: false
+
+#####-----传统方法参数-----#####
+threshold: 150
+max_angle_error: 45 # degree
+min_lightbar_ratio: 1.5
+max_lightbar_ratio: 20
+min_lightbar_length: 8
+min_armor_ratio: 1
+max_armor_ratio: 5
+max_side_ratio: 1.5
+max_rectangular_error: 25 # degree
+
+#####-----tracker参数-----#####
+min_detect_count: 5
+max_temp_lost_count: 15
+max_extinguish_track_count: 15
+outpost_max_temp_lost_count: 75
+
+#####-----target EKF-----#####
+ekf_normal_v1: 100 # linear acceleration process noise
+ekf_normal_v2: 400 # angular acceleration process noise
+ekf_outpost_v1: 10
+
+#####-----aimer参数-----#####
+yaw_offset: 1.45 # degree -2.5
+pitch_offset: -0.4 # degree 2
+comming_angle: 20 # degree
+leaving_angle: 17 # degree
+outpost_comming_angle: 15 # degree
+outpost_leaving_angle: 13 # degree
+
+ekf_outpost_v2: 0.1
+ekf_adaptive_v1: true
+ekf_adaptive_v1_high: 3000
+ekf_adaptive_v1_decay: 0.85
+ekf_adaptive_v1_residual_yaw: 0.015 # rad
+ekf_adaptive_v1_residual_pitch: 0.015 # rad
+ekf_adaptive_v1_residual_distance: 0.25 # m
+ekf_adaptive_v2: true
+ekf_adaptive_v2_high: 1500
+ekf_adaptive_v2_decay: 0.85
+ekf_adaptive_v2_residual_angle: 0.5 # rad
+ekf_adaptive_v2_nis: 5.511
+# true = always use the latest observation, false = normal EKF prediction,
+# auto = enable observation-only after the recent Z range exceeds the threshold below.
+z_observation_only: false
+z_observation_auto_window_frames: 150
+z_observation_auto_range_threshold: 0.15 # m
+
+decision_speed: 7 # rad/s
+high_speed_delay_time: 0.056 # s
+low_speed_delay_time: 0.056 # s planner use this value
+outpost_delay_time: 0.02 # s
+trajectory_model: hero
+min_bullet_speed: 9.5
+max_bullet_speed: 13.5
+default_bullet_speed: 11.7
+use_electrical_control_bullet_speed: false # 是否使用电控回传弹速
+hero_air_resistance_k: 0.000556
+hero_s_bias: 0.2
+hero_rk_iter: 60
+ballistic_debug: false
+ballistic_debug_interval: 0.5
+
+#####-----shooter参数-----#####
+first_tolerance: 3 # 近距离射击容差，degree
+second_tolerance: 2 # 远距离射击容差，degree
+judge_distance: 2 #距离判断阈值
+auto_fire: true # 是否由自瞄控制射击
+
+camera_name: "hikrobot"
+exposure_ms: 1.5
+gain: 16.9
+vid_pid: "2bdf:0001"
+
+combat_camera:
+  camera_name: "hikrobot"
+  exposure_ms: 0.95
+  gain: 16.9
+  vid_pid: "2bdf:0001"
+  camera_user_id: "A"
+
+idle_camera:
+  camera_name: "hikrobot"
+  exposure_ms: 2.2
+  gain: 16.9
+  vid_pid: "2bdf:0001"
+  camera_user_id: "B"
+
+#  1  0  0
+#  0  1  0
+#  0  0  1
+R_gimbal2imubody: [1, 0, 0, 0, 1, 0, 0, 0, 1]
+
+# 重投影误差: 0.1820px
+camera_matrix: [2352.1994, 0.00000, 547.26707, 0.00000, 2350.85004, 454.28701, 0.00000, 0.00000, 1.00000]
+distort_coeffs: [-0.106697, 0.181723, 0.000657, -0.000104, 0.000000]
+# 相机同理想情况的偏角: yaw1.44 pitch-7.28 roll0.96 degree
+# 标定板到世界坐标系原点的水平距离: 1.13 m
+# 标定板同竖直摆放时的偏角: yaw7.61 pitch13.92 roll-0.46 degree
+R_camera2gimbal: [-0.014999436, -0.079812598, 0.996697028, -0.999887502, 0.001197279, -0.014951576, 0.000000000, -0.996809167, -0.079821578]
+t_camera2gimbal: [0.29, 0.00, 0.065]
+#####-----cboard参数-----#####
+quaternion_canid: 0x100
+bullet_speed_canid: 0x101
+send_canid: 0xff
+can_interface: "can0"
+
+#####-----gimbal参数-----#####
+com_port: "/dev/ttyACM0"
+yaw_kp: 0
+yaw_kd: 0
+pitch_kp: 0
+pitch_kd: 0
+
+#####-----planner-----#####
+fire_thresh: 0.0035
+# 锁中心：高速旋转时 yaw 瞄整车中心，pitch 仍按当前可打装甲板高度计算
+aim_center_enable: false              # 总开关：false 时完全不启用锁中心
+aim_center_near_spin_enable: true    # 近距离高转速锁中心条件开关，同时满足下面的转速和距离阈值
+aim_center_near_spin_w: 1.5          # 近距离锁中心角速度阈值，abs(w) 大于该值才触发，rad/s
+aim_center_near_distance: 1.5        # 近距离锁中心距离阈值，目标中心距离小于该值才触发，m
+aim_center_spin_enable: false         # 全距离高转速锁中心条件开关
+aim_center_spin_w: 5.0               # 全距离锁中心角速度阈值，abs(w) 大于该值触发，rad/s
+aim_center_shoot_yaw: 20.0            # 锁中心开火窗口：未来装甲板中心方位与当前中心瞄准线的允许误差，degree
+aim_center_fire_lead_time: 0.03      # 锁中心开火提前量：判断穿线时额外向未来预测的时间，打慢就增大，s
+aim_center_enter_step: 50            # 满足锁中心条件时滞回计数每帧增加量，越大进入越快
+aim_center_exit_step: 30             # 不满足条件时滞回计数每帧减少量，影响下次再触发的进入速度
+aim_center_hold_threshold: 100       # 当前帧满足触发且计数高于该值时才进入锁中心
+aim_center_hold_max: 400             # 滞回计数上限
+armor_lock_max_w: 2.0
+armor_lock_angle: 52.5
+
+max_yaw_acc: 50
+Q_yaw: [9e6, 0]
+R_yaw: [1]
+
+max_pitch_acc: 100
+Q_pitch: [9e6, 0]
+R_pitch: [1]
+
+
+#####-----部署图传参数-----######
+deploy_vt_param:
+  crop_size: 800            # 输入裁剪尺寸 (ROI 尺寸)
+  crop_x_offset_px: 100     # ROI 相对居中位置的 X 偏移 (像素，正数向右)
+  target_size: 400          # 输出缩放尺寸
+  target_fps: 60            # 目标编码帧率
+  no_frame_sampling: false  # 禁用抽帧 (启用后不再主动限制帧率至 targetFps)
+  b_frames_count: 0         # 单 GOP 内 B 帧的数量 (0 - 8)
+  gop_size: 120             # GOP 长度 
+  max_qp: 45                # 最大量化值 (1 - 51)
+  min_qp: 15                # 最小量化值 (1 - 51)
+  encode_quality: 4         # 编码质量 (越小越好/越慢) (1-7) (小于4有概率导致 pipeline 罢工)
+  ref_frames: 3             # P 帧向前参考帧数
+  target_bitrate: 80        # 目标编码码率 (Kbps) (max = 100)
+  bitrate_percentage: 66    # 目标编码码率百分比 (仅 VBR 有效) (1-100)
+  rc_quality_factor: 26     # 码率控制质量因数 (仅 QVBR 有效， 1 - 51, 越小越好/越慢)
+
+  old_vaenc:
+    cpb_length: 1000  # 码率控制缓冲区长度 (ms) (1 - 10000) (过低可能导致 VCM/QVBR 下码率不稳定)
+    rc_mode: "QVBR"   # [CBR, VBR, QVBR] -> (固定码率, 可变码率, 基于质量的可变码率)
+
+  new_vaenc:
+    cpb_length: 0     # 0 = Auto calculate, 0 - 2048000
+    rc_mode: "VCM"    # [CBR, VBR, VCM, QVBR] (VCM -> Video Conferencing Mode (Non HRD compliant))
+
+  static_simplify: true              # 启用静态背景简化
+  bg_mono_bitrate_thres: 80          # 触发背景去色的码率阈值 (30 - 100)
+  force_bg_mono: false               # 强制剥离背景色彩
+  motion_thres: 14                   # 运动检测像素差值阈值
+  motion_erode_px: 1                 # 运动掩码腐蚀半径 (0 - 20)
+  motion_dilate_px: 2                # 运动掩码膨胀半径 (0 - 20)
+  motion_trail_frames: 3             # 运动拖影保留帧数 (0为关闭, 0-15)
+  trail_disable_motion_ratio: 0.30   # 禁用拖影的运动区域占比阈值
+  bg_update_alpha: 0.01              # 背景模型学习率
+  bg_blur_sigma: 1.2                 # 静态背景高斯模糊强度
+  center_clear_size: 100              # 中心固定清晰横条高度（宽度为完整输出宽度）
+  force_mono: false                  # 强制全局单色调
+
+  show_tx_prof_log: true  # 显示性能指标日志
+  
+  # packet_size: 300;                   # 网络发包 payload 大小 (Byte, max = 300)
+  # max_packet_queue_size: 40;          # 最大缓存包数 (~1s)

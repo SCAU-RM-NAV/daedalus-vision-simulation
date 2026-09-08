@@ -1,0 +1,74 @@
+---
+BasedOnStyle: Google
+AccessModifierOffset: "-2"
+AlignArrayOfStructures: Right
+AlignAfterOpenBracket: BlockIndent
+AlignConsecutiveAssignments:
+  Enabled: true
+  AcrossComments: true
+  AlignCompound: true
+  AlignFunctionDeclarations: true
+AlignConsecutiveBitFields:
+  Enabled: true
+  AcrossComments: true
+  PadOperators: true
+AlignConsecutiveDeclarations:
+  Enabled: true
+  PadOperators: true
+AlignConsecutiveMacros:
+  Enabled: true
+  AcrossComments: true
+  PadOperators: true
+AlignConsecutiveShortCaseStatements:
+  Enabled: true
+  AlignCaseArrows: true
+  AlignCaseColons: true
+AlignEscapedNewlines: Right 
+AlignOperands: Align
+AllowAllParametersOfDeclarationOnNextLine: "true"
+AllowShortBlocksOnASingleLine: "true"
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortLambdasOnASingleLine: Inline
+BinPackArguments: false
+BinPackParameters: false
+BraceWrapping:
+  AfterCaseLabel: false
+  AfterClass: true
+  AfterControlStatement: Never
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: false
+  AfterObjCDeclaration: false
+  AfterStruct: true
+  AfterUnion: true
+  AfterExternBlock: true
+  BeforeCatch: false
+  BeforeElse: false
+  BeforeLambdaBody: false
+  BeforeWhile: false
+  IndentBraces: false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
+BreakBeforeBraces: Custom
+BreakConstructorInitializers: AfterColon
+ColumnLimit: 100
+CompactNamespaces: "false"
+Cpp11BracedListStyle: "false"
+IncludeBlocks: Preserve
+IndentWidth: "2"
+ReflowComments: false
+SpaceAfterLogicalNot: "false"
+SpaceAfterTemplateKeyword: "false"
+SpaceBeforeAssignmentOperators: "true"
+SpaceBeforeCpp11BracedList: "false"
+SpaceBeforeParens: Custom
+SpaceBeforeRangeBasedForLoopColon: "true"
+SpacesInAngles: "false"
+TabWidth: "2"
+UseTab: ForContinuationAndIndentation
+Language: Cpp
+AllowAllConstructorInitializersOnNextLine: "false"
+SpaceInEmptyParentheses: "false"
+
+# For 20.1.8

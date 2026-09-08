@@ -1,0 +1,8 @@
+**/target/
+**/build/
+**/install/
+**/log/
+**/sim_reports/
+*.core
+core
+

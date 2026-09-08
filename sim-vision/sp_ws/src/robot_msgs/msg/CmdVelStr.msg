@@ -1,0 +1,4 @@
+float64 need_cmd_vel
+float64 cmd_vel_x
+float64 cmd_vel_y
+float64 cmd_vel_yaw

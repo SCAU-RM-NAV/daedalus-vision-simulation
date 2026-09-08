@@ -1,0 +1,9 @@
+// AUTO GENERATED FILE, DO NOT EDIT!
+
+#pragma once
+
+#define USE_OLD_VAENC @VT_USE_OLD_VAENC@
+
+namespace hdvt {
+constexpr bool useOldVAEnc = (USE_OLD_VAENC == 1);
+}

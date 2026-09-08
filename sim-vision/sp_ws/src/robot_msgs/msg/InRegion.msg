@@ -1,0 +1,2 @@
+bool enemy_inregion
+bool in_middle

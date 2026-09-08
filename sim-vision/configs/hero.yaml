@@ -1,0 +1,176 @@
+# enemy_color: "red"
+enemy_color: "blue"
+
+# Armor numbers to ignore: 1 hero, 2 engineer, 3/4 infantry, 5 infantry, 6 sentry, 7 outpost, 8 base.
+ignore_num: []
+# Armor numbers to prefer; leave empty to keep the default target order.
+priority_num: []
+
+#####-----神经网络参数-----#####
+yolo_name: yolov5
+classify_model: assets/tiny_resnet.onnx
+yolo11_model_path: assets/20260729last.xml
+yolov8_model_path: assets/yolov8.xml
+yolov5_model_path: assets/yolov5.xml
+device: GPU
+min_confidence: 0.8
+use_traditional: false
+fast_yolo_filter: true # 快速过滤总开关
+fast_yolo_geometry_filter: true # 几何过滤开关
+fast_yolo_color_filter: false # 颜色过滤开关
+fast_yolo_min_light_ratio: 0.45
+fast_yolo_max_light_angle_diff: 18
+fast_yolo_color_dominance: 1.05
+fast_yolo_color_min_ratio: 0.35
+fast_yolo_color_stride: 2
+fast_yolo_color_min_samples: 4
+
+openvino_num_requests: 3
+openvino_preprocess_threads: 2
+openvino_postprocess_threads: 1
+openvino_result_queue_size: 2
+#####-----ROI-----#####
+roi: 
+  x: 420
+  y: 50
+  width: 600
+  height: 600
+
+use_roi: false
+
+#####-----传统方法参数-----#####
+threshold: 150
+max_angle_error: 45 # degree
+min_lightbar_ratio: 1.5
+max_lightbar_ratio: 20
+min_lightbar_length: 8
+min_armor_ratio: 1
+max_armor_ratio: 5
+max_side_ratio: 1.5
+max_rectangular_error: 25 # degree
+
+#####-----tracker参数-----#####
+min_detect_count: 5
+max_temp_lost_count: 15
+max_extinguish_track_count: 15
+outpost_max_temp_lost_count: 75
+
+#####-----target EKF-----#####
+ekf_normal_v1: 100 # linear acceleration process noise
+ekf_normal_v2: 400 # angular acceleration process noise
+ekf_outpost_v1: 10
+ekf_outpost_v2: 0.1
+ekf_adaptive_v1: true
+ekf_adaptive_v1_high: 3000
+ekf_adaptive_v1_decay: 0.85
+ekf_adaptive_v1_residual_yaw: 0.03 # rad
+ekf_adaptive_v1_residual_pitch: 0.04 # rad
+ekf_adaptive_v1_residual_distance: 0.2 # m
+ekf_adaptive_v2: true
+ekf_adaptive_v2_high: 1500
+ekf_adaptive_v2_decay: 0.85
+ekf_adaptive_v2_residual_angle: 0.5 # rad
+ekf_adaptive_v2_nis: 5.511
+# true = always use the latest observation, false = normal EKF prediction,
+# auto = enable observation-only after the recent Z range exceeds the threshold below.
+z_observation_only: false
+z_observation_auto_window_frames: 150
+z_observation_auto_range_threshold: 0.15 # m
+
+#####-----aimer参数-----#####
+yaw_offset: 5 # degree -2.5
+pitch_offset: 1.0 # degree 2
+comming_angle: 55 # degree
+leaving_angle: 20 # degree
+outpost_comming_angle: 30 # degree
+outpost_leaving_angle: 30 # degree
+decision_speed: 7 # rad/s
+high_speed_delay_time: 0.055 # s
+low_speed_delay_time: 0.055 # s planner use this value
+outpost_delay_time: 0.02 # s
+trajectory_model: hero
+min_bullet_speed: 9.5
+max_bullet_speed: 13.5
+default_bullet_speed: 11.7
+use_electrical_control_bullet_speed: true # 是否使用电控回传弹速
+hero_air_resistance_k: 0.000556
+hero_s_bias: 0.2
+hero_rk_iter: 60
+ballistic_debug: false
+ballistic_debug_interval: 0.5
+
+#####-----shooter参数-----#####
+first_tolerance: 3 # 近距离射击容差，degree
+second_tolerance: 2 # 远距离射击容差，degree
+judge_distance: 2 #距离判断阈值
+auto_fire: true # 是否由自瞄控制射击
+
+camera_name: "hikrobot"
+exposure_ms: 1.5
+gain: 16.9
+vid_pid: "2bdf:0001"
+
+#  1  0  0
+#  0  1  0
+#  0  0  1
+R_gimbal2imubody: [1, 0, 0, 0, 1, 0, 0, 0, 1]
+
+# 重投影误差: 0.1820px
+camera_matrix: [1805.84414, 0, 714.59468, 0, 1805.19195, 559.38695, 0, 0, 1]
+distort_coeffs: [-0.074324, 0.135016, -0.000622, -0.000491, 0.000000]
+# 相机同理想情况的偏角: yaw1.44 pitch-7.28 roll0.96 degree
+# 标定板到世界坐标系原点的水平距离: 1.13 m
+# 标定板同竖直摆放时的偏角: yaw7.61 pitch13.92 roll-0.46 degree
+# R_camera2gimbal: [-0.027182119030230909, -0.12616154330853446, 0.99163723074269183, -0.99949106557517331, 0.019998323121329122, -0.024853106601381177, -0.016695575474690555, -0.99180811252093692, -0.12664093215554434]
+# t_camera2gimbal: [0.13160669975045827, 0.10377721766577375, 0.024908271912914642]
+R_camera2gimbal: [-0.094857169, -0.111708013, 0.989203436, -0.995490893, 0.010644302, -0.094258057, 0.000000000, -0.993684064, -0.112213998]
+t_camera2gimbal: [0.10832, 0.00000, 0.08175]
+#####-----cboard参数-----#####
+quaternion_canid: 0x100
+bullet_speed_canid: 0x101
+send_canid: 0xff
+can_interface: "can0"
+
+#####-----gimbal参数-----#####
+com_port: "/dev/ttyACM0"
+yaw_kp: 0
+yaw_kd: 0
+pitch_kp: 0
+pitch_kd: 0
+
+#####-----planner-----#####
+fire_thresh: 0.0035
+fire_gate:
+  # 击发门模式：off=关闭并保持旧逻辑；shadow=只记录不拦截（仅限无弹调试）；enforce=正式启用
+  mode: off
+  # 新目标、EKF重建、锁中心模式切换或预测明显变化后，至少等待的时间，单位：秒
+  # 如果仍有“前几发打不中”，优先每次增加0.05秒；推荐范围0.15～0.40秒
+  warmup_time: 0.25
+  # 预热结束后，预测结果需要连续稳定的真实观测帧数；100Hz重复规划不会重复计数
+  # 推荐范围3～6帧，数值越大越保守
+  stable_observations: 4
+  # 相邻两次EKF结果预测到同一命中时刻后，yaw/pitch合成变化量的上限，单位：度
+  # 长时间无法进入READY时可适当增大；推荐范围0.15～0.40度
+  max_prediction_change_deg: 0.25
+# 锁中心：高速旋转时 yaw 瞄整车中心，pitch 仍按当前可打装甲板高度计算
+aim_center_enable: false              # 总开关：false 时完全不启用锁中心
+aim_center_near_spin_enable: true    # 近距离高转速锁中心条件开关
+aim_center_near_spin_w: 5.5          # 近距离锁中心角速度阈值，abs(w) 大于该值才触发，rad/s
+aim_center_near_distance: 3.5        # 近距离锁中心距离阈值，目标中心距离小于该值才触发，m
+aim_center_spin_enable: false         # 全距离高转速锁中心条件开关
+aim_center_spin_w: 5.0               # 全距离锁中心角速度阈值，abs(w) 大于该值触发，rad/s
+aim_center_shoot_yaw: 0.3            # 锁中心时允许开火的装甲板朝向窗口，degree，越小越保守
+aim_center_enter_step: 50            # 满足锁中心条件时滞回计数每帧增加量，越大进入越快
+aim_center_exit_step: 30             # 不满足条件时滞回计数每帧减少量，影响下次再触发的进入速度
+aim_center_hold_threshold: 100       # 当前帧满足触发且计数高于该值时才进入锁中心
+aim_center_hold_max: 400             # 滞回计数上限
+armor_lock_max_w: 2.0
+armor_lock_angle: 45
+
+max_yaw_acc: 50
+Q_yaw: [9e6, 0]
+R_yaw: [1]
+
+max_pitch_acc: 100
+Q_pitch: [9e6, 0]
+R_pitch: [1]

@@ -1,0 +1,91 @@
+# Bevy RoboMaster 仿真器配置
+
+[window]
+# 渲染显示模式。Talos/ROS2 高帧率采集建议使用 `auto_no_vsync`，避免 60Hz 垂直同步限制。
+# 可选值：auto_vsync、auto_no_vsync、fifo、fifo_relaxed、mailbox、immediate。
+present_mode = "auto_no_vsync"
+
+[debug]
+# 开启右侧 Scenario Control 面板，可热调敌方步兵/英雄的装甲高度、上下运动和小陀螺。
+# 关闭后适合纯 headless 性能回归；此项在启动时读取，修改后需重启 Daedalus。
+egui = true
+inspector = false
+# 向终端输出 FPS 和帧耗时诊断信息。
+diagnostics = true
+
+[preview]
+# 屏幕预览相机。关闭可避免预览与算法采集各渲染一次场景。
+enabled = true
+
+[render]
+# 大场景下阴影开销较高，关闭可提高帧率。
+shadows = false
+# 主屏幕相机抗锯齿。
+main_camera_fxaa = true
+# 在 macOS 上为彩色 3D 相机启用 Apple MetalFX 时域超分。
+metalfx_temporal = true
+# 在支持时，于 MetalFX 时域超分后启用帧插值。
+metalfx_frame_generation = true
+# MetalFX 时域超分使用的输出分辨率与渲染分辨率比例。
+metalfx_scale = 2.0
+illuminance = 500.0
+[capture.color]
+# RGB 算法相机采集分辨率。
+width = 1440
+height = 1080
+
+[capture.depth]
+# 面向 Livox 兼容点云输出的深度相机采集分辨率。
+width = 1280
+height = 720
+near = 0.1
+far = 80.0
+
+[livox_ros]
+enabled = true
+frame_id = "camera_link"
+publish_freq = 10.0
+points_per_second = 400000
+line_num = 20
+tag_default = 0
+intensity_default = 1000.0
+
+[physics]
+fixed_hz = 120.0                # 物理固定步频，单位 Hz
+substep_count = 8               # 每个物理固定步内的子步数
+
+[vehicle]
+rotation_speed = 7.42            # 底盘偏航角速度，单位 rad/s
+tilt_rotation_speed = 3.0        # 底盘横滚/俯仰摆动角速度，单位 rad/s
+gimbal_rotation_speed = 3.0     # 手动云台旋转角速度，单位 rad/s
+gimbal_pitch_limit = 0.785      # 云台俯仰机械限位，单位 rad，约 45 度
+max_speed = 8.0                 # 车辆最大平移速度，单位 m/s
+linear_acceleration = 12.0      # 车辆线加速度，单位 m/s^2，普通 WASD 也能快速起步
+acceleration_exponent = 2.5    # 非线性加速曲线指数
+
+[mecanum]
+wheel_radius_m = 0.076          # 轮半径，单位 m
+half_wheelbase_m = 0.18         # 前后轮距的一半，单位 m
+half_trackwidth_m = 0.15        # 左右轮距的一半，单位 m
+
+[projectile]
+lifetime = 5.0                  # 弹丸生命周期，单位 s
+speed = 25.0                    # 弹丸初速，单位 m/s
+cooldown = 0.05                  # 连续发射冷却时间，单位 s
+diameter = 0.017                # 弹丸直径，单位 m，17 mm 弹丸为 0.017
+mass = 0.0032                    # 弹丸质量，单位 kg，17 mm 弹丸为 0.0032
+friction = 1.1                  # 弹丸碰撞摩擦系数
+linear_damping = 0.0            # 线性阻尼；使用下方物理空气阻力时建议保持为 0
+uav_vel = 5.0
+uav_size = 0.5
+[projectile.aerodynamics]
+enabled = false                  # 是否启用空气动力学力
+air_density = 1.225             # 海平面空气密度，单位 kg/m^3
+drag_coefficient = 0.22516         # 光滑球体阻力系数 Cd
+wind = [0.0, 0.0, 0.0]          # 世界坐标系风速，单位 m/s
+
+[camera]
+fov = 45.0                      # 视场角，单位度
+free_move_speed = 8.0           # 自由视角相机移动速度，单位 m/s
+follow_offset = [0.0, 3.0, 2.0] # 跟随视角相对机器人偏移
+mouse_sensitivity = 0.003       # 鼠标视角灵敏度

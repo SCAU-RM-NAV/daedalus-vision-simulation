@@ -1,0 +1,6 @@
+string back_enemy_id
+string left_enemy_id
+string right_enemy_id
+float64 back_diff_angle
+float64 left_diff_angle
+float64 right_diff_angle

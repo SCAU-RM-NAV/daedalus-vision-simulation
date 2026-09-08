@@ -1,0 +1,26 @@
+mod camera;
+mod chassis_observation;
+mod controller;
+mod debug;
+mod input;
+mod projectile;
+mod scenario_control;
+mod uav;
+pub use camera::*;
+pub use chassis_observation::*;
+pub use controller::*;
+pub use debug::*;
+pub use input::*;
+pub use projectile::*;
+pub use scenario_control::*;
+pub use uav::*;
+
+use bevy::prelude::*;
+
+#[derive(SystemSet, Clone, PartialEq, Eq, Hash, Debug)]
+pub enum GameplaySystems {
+    Input,
+    GameLogic,
+    Camera,
+    Cleanup,
+}

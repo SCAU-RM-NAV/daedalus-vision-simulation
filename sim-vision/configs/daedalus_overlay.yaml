@@ -1,0 +1,56 @@
+# Daedalus-only calibration overlay. Algorithm parameters always come from configs/sentry.yaml.
+# Ubuntu's OpenCV 4.6 cannot import the sentry ONNX Split node. Use the same detector through
+# its OpenVINO IR on this PC; this changes only the inference adapter, not algorithm thresholds.
+yolov5_backend: openvino
+
+# Simulation-domain detector frontend. NMS/keypoint filtering and the complete
+# PnP/solver/tracker/predictor/fire pipeline continue to come from sentry.yaml.
+buff_detector:
+  backend: onnxruntime_cuda
+  model: assets/buff.onnx
+  conf_threshold: 0.3
+  r_center_refine: true
+  r_center_refine_threshold: 100
+  r_center_refine_radius_scale: 0.50
+  r_center_refine_kernel_size: 3
+  r_center_refine_hierarchy_filter: false
+  r_center_refine_max_child_area_ratio: 0.50
+
+# Restore the response characteristics previously validated against Daedalus rendering.
+# The physical-robot sentry.yaml remains unchanged.
+fire_gap_time: 0.050
+
+predictor:
+  small_predictor: target_ekf
+
+fitting:
+  big_min_fit_size: 45
+  big_direction_lock_threshold: 0.20
+  small_direction_lock_threshold: 0.20
+
+command_guard:
+  max_yaw_rate: 20.0
+  max_pitch_rate: 20.0
+  # The simulation detector generally exposes one active blade continuously, so the
+  # physical multi-to-single transition guard would otherwise remain latched forever.
+  big_single_leaf_fire_guard_enabled: false
+  # Daedalus uses an idealized gimbal response but reports the feedback one frame behind
+  # the visual plan. Use a wider simulation fire gate while retaining fitted/ballistic gates.
+  max_fire_yaw_error: 0.12
+  max_fire_pitch_error: 0.12
+
+# Real-robot energy biases compensate physical assembly/projectile calibration. Daedalus
+# uses ideal geometry, so carrying those biases into simulation creates a fixed aim offset.
+ballistic:
+  energy_yaw_bias: -0.010
+  energy_pitch_bias: -0.010
+
+yaw_offset: 0.0
+pitch_offset: -3.0
+left_yaw_offset: 0.0
+right_yaw_offset: 0.0
+R_gimbal2imubody: [1, 0, 0, 0, 1, 0, 0, 0, 1]
+camera_matrix: [1754.61653, 0.0, 571.56669, 0.0, 1754.98379, 464.35341, 0.0, 0.0, 1.0]
+distort_coeffs: [-0.058067, 0.085503, -0.000120, 0.000585, 0.0]
+R_camera2gimbal: [-0.010999490, 0.038547524, 0.999196227, -0.999939504, -0.000424029, -0.010991314, 0.0, -0.999256678, 0.038549856]
+t_camera2gimbal: [0.07, 0.047, 0.0]

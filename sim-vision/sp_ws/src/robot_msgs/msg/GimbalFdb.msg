@@ -1,0 +1,16 @@
+std_msgs/Header header
+
+float64 yaw_fdb
+float64 pitch_fdb
+float64 imu_yaw
+float64 imu_yaw_rate
+float64 imu_pitch
+float64 imu_pitch_rate
+float64 super_cup_state
+float64 yaw_chassis
+int8 remain_energy
+float64 gimbal_pitch_tole_fdb
+float64 gimbal_yaw_tole_fdb
+float64 bullet_speed
+float64 diff_base_to_gimble
+int8 shoot_gongcheng

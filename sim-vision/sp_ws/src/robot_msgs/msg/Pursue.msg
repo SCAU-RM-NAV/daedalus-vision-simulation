@@ -1,0 +1,3 @@
+float64 gimbal_enemy_x
+float64 gimbal_enemy_y
+geometry_msgs/Point position
