@@ -124,6 +124,7 @@ pub struct VehicleConfig {
     pub max_speed: f32,
     pub linear_acceleration: f32,
     pub acceleration_exponent: f32,
+    pub gimbal_dynamics: GimbalDynamicsConfig,
 }
 
 impl Default for VehicleConfig {
@@ -136,6 +137,34 @@ impl Default for VehicleConfig {
             max_speed: 4.0,
             linear_acceleration: 8.0,
             acceleration_exponent: 10.0,
+            gimbal_dynamics: GimbalDynamicsConfig::default(),
+        }
+    }
+}
+
+/// Closed-loop gimbal actuator approximation used by the Talos vision bridge.
+///
+/// The real sentry runs cascaded IMU angle/velocity loops at 500 Hz on 1:1
+/// DM4310 motors. These parameters describe the resulting closed-loop motion,
+/// rather than copying torque-loop PID gains into a model without motor inertia.
+#[derive(Deserialize, Reflect, Clone)]
+#[serde(default)]
+pub struct GimbalDynamicsConfig {
+    pub max_speed_radps: f32,
+    pub yaw_max_acceleration_radps2: f32,
+    pub pitch_max_acceleration_radps2: f32,
+    pub position_kp: f32,
+}
+
+impl Default for GimbalDynamicsConfig {
+    fn default() -> Self {
+        Self {
+            // DM4310 firmware limit in 26_tunnel_sentry, with a 1:1 reduction.
+            max_speed_radps: 30.0,
+            // Keep the planner's sentry.yaml acceleration envelopes.
+            yaw_max_acceleration_radps2: 50.0,
+            pitch_max_acceleration_radps2: 100.0,
+            position_kp: 24.0,
         }
     }
 }

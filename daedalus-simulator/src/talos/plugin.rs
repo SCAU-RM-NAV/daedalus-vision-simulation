@@ -4,7 +4,7 @@ use crate::components::{
     Controlled, Infantry, InfantryGimbal, InfantryLaunchOffset, PendingTalosFire, SimHitEventQueue,
     SubscribeAutoAim,
 };
-use crate::config::SimulationConfig;
+use crate::config::{GimbalDynamicsConfig, SimulationConfig};
 use crate::robomaster::prelude::{
     MechanismState, PowerRune, PowerRuneMechanism, PowerRuneRotation, RuneMode, Team,
 };
@@ -41,12 +41,6 @@ impl TalosGimbalDynamics {
     }
 }
 
-const MAX_GIMBAL_SPEED_RADPS: f32 = 8.0;
-const MAX_GIMBAL_YAW_ACCEL_RADPS2: f32 = 50.0;
-const MAX_GIMBAL_PITCH_ACCEL_RADPS2: f32 = 100.0;
-const MIN_GIMBAL_ACCEL_RADPS2: f32 = 12.0;
-const ZERO_FEEDFORWARD_ACCEL_RADPS2: f32 = 1e-3;
-const GIMBAL_POSITION_KP: f32 = 8.0;
 const DEFAULT_GIMBAL_PITCH_LIMIT_RAD: f32 = 0.785;
 
 fn wrap_angle(angle: f32) -> f32 {
@@ -60,6 +54,7 @@ fn step_axis(
     requested_velocity: f32,
     requested_accel: f32,
     dt: f32,
+    config: &GimbalDynamicsConfig,
 ) -> (f32, f32) {
     step_pitch_axis(
         position,
@@ -69,7 +64,8 @@ fn step_axis(
         requested_accel,
         dt,
         DEFAULT_GIMBAL_PITCH_LIMIT_RAD,
-        MAX_GIMBAL_PITCH_ACCEL_RADPS2,
+        config.pitch_max_acceleration_radps2,
+        config,
     )
 }
 
@@ -80,24 +76,26 @@ fn step_yaw_axis(
     requested_velocity: f32,
     requested_accel: f32,
     dt: f32,
+    config: &GimbalDynamicsConfig,
 ) -> (f32, f32) {
     let error = wrap_angle(target - position);
-    let (desired_velocity, max_acceleration) = position_control_velocity(
-        error,
-        requested_velocity,
-        requested_accel,
-        MAX_GIMBAL_YAW_ACCEL_RADPS2,
-    );
-    let max_delta = max_acceleration * dt;
-    let next_velocity = (velocity + (desired_velocity - velocity).clamp(-max_delta, max_delta))
-        .clamp(-MAX_GIMBAL_SPEED_RADPS, MAX_GIMBAL_SPEED_RADPS);
+    let desired_velocity = position_control_velocity(error, requested_velocity, config);
+    let max_delta = config.yaw_max_acceleration_radps2 * dt;
+    let velocity_error = desired_velocity - velocity;
+    let next_velocity = (velocity
+        + (velocity_error + requested_accel * dt).clamp(-max_delta, max_delta))
+    .clamp(-config.max_speed_radps, config.max_speed_radps);
     let delta = wrap_angle(target - position);
-    let next_position = if delta.abs() <= next_velocity.abs() * dt {
-        target
+    if delta.abs() <= next_velocity.abs() * dt
+        && (delta == 0.0 || next_velocity.signum() == delta.signum())
+    {
+        // The real cascaded position loop brakes at the setpoint. Keeping the
+        // pre-snap velocity here made feedback report motion which never
+        // happened and caused the next MPC command to overshoot.
+        (target, delta / dt)
     } else {
-        position + next_velocity * dt
-    };
-    (next_position, next_velocity)
+        (position + next_velocity * dt, next_velocity)
+    }
 }
 
 fn step_pitch_axis(
@@ -109,22 +107,22 @@ fn step_pitch_axis(
     dt: f32,
     pitch_limit: f32,
     acceleration_limit: f32,
+    config: &GimbalDynamicsConfig,
 ) -> (f32, f32) {
     let target = target.clamp(-pitch_limit, pitch_limit);
     let error = target - position;
-    let (desired_velocity, max_acceleration) = position_control_velocity(
-        error,
-        requested_velocity,
-        requested_accel,
-        acceleration_limit,
-    );
-    let max_delta = max_acceleration * dt;
-    let next_velocity = (velocity + (desired_velocity - velocity).clamp(-max_delta, max_delta))
-        .clamp(-MAX_GIMBAL_SPEED_RADPS, MAX_GIMBAL_SPEED_RADPS);
-    let next_position = if error.abs() <= next_velocity.abs() * dt {
-        target
+    let desired_velocity = position_control_velocity(error, requested_velocity, config);
+    let max_delta = acceleration_limit * dt;
+    let velocity_error = desired_velocity - velocity;
+    let next_velocity = (velocity
+        + (velocity_error + requested_accel * dt).clamp(-max_delta, max_delta))
+    .clamp(-config.max_speed_radps, config.max_speed_radps);
+    let (next_position, next_velocity) = if error.abs() <= next_velocity.abs() * dt
+        && (error == 0.0 || next_velocity.signum() == error.signum())
+    {
+        (target, error / dt)
     } else {
-        position + next_velocity * dt
+        (position + next_velocity * dt, next_velocity)
     };
     (
         next_position.clamp(-pitch_limit, pitch_limit),
@@ -135,25 +133,16 @@ fn step_pitch_axis(
 fn position_control_velocity(
     error: f32,
     requested_velocity: f32,
-    requested_accel: f32,
-    acceleration_limit: f32,
-) -> (f32, f32) {
-    let requested_accel = requested_accel.abs();
-    let max_acceleration = if requested_accel <= ZERO_FEEDFORWARD_ACCEL_RADPS2 {
-        MIN_GIMBAL_ACCEL_RADPS2
-    } else {
-        requested_accel.min(acceleration_limit)
-    };
+    config: &GimbalDynamicsConfig,
+) -> f32 {
     let feedback_velocity =
-        (GIMBAL_POSITION_KP * error).clamp(-MAX_GIMBAL_SPEED_RADPS, MAX_GIMBAL_SPEED_RADPS);
-    let braking_velocity = (2.0 * max_acceleration * error.abs()).sqrt();
+        (config.position_kp * error).clamp(-config.max_speed_radps, config.max_speed_radps);
     let mut desired_velocity = (feedback_velocity + requested_velocity)
-        .clamp(-MAX_GIMBAL_SPEED_RADPS, MAX_GIMBAL_SPEED_RADPS);
-    desired_velocity = desired_velocity.clamp(-braking_velocity, braking_velocity);
+        .clamp(-config.max_speed_radps, config.max_speed_radps);
     if error != 0.0 && desired_velocity.signum() != error.signum() {
         desired_velocity = 0.0;
     }
-    (desired_velocity, max_acceleration)
+    desired_velocity
 }
 
 fn gimbal_local_rotation(yaw: f32, pitch: f32) -> Quat {
@@ -307,8 +296,10 @@ fn process_subscription(
             dynamics.pitch_velocity_radps = 0.0;
             dynamics.target_yaw_velocity_radps = 0.0;
             dynamics.target_pitch_velocity_radps = 0.0;
-            dynamics.yaw_acceleration_radps2 = MAX_GIMBAL_YAW_ACCEL_RADPS2;
-            dynamics.pitch_acceleration_radps2 = MAX_GIMBAL_PITCH_ACCEL_RADPS2;
+            dynamics.yaw_acceleration_radps2 =
+                config.vehicle.gimbal_dynamics.yaw_max_acceleration_radps2;
+            dynamics.pitch_acceleration_radps2 =
+                config.vehicle.gimbal_dynamics.pitch_max_acceleration_radps2;
         } else {
             let (local_yaw, local_pitch) = world_command_to_local(
                 cmd.yaw_rad,
@@ -345,6 +336,7 @@ fn process_subscription(
         dynamics.target_yaw_velocity_radps,
         dynamics.yaw_acceleration_radps2,
         dt,
+        &config.vehicle.gimbal_dynamics,
     );
     let (pitch, pitch_velocity) = step_pitch_axis(
         gimbal_data.pitch,
@@ -354,7 +346,8 @@ fn process_subscription(
         dynamics.pitch_acceleration_radps2,
         dt,
         config.vehicle.gimbal_pitch_limit,
-        MAX_GIMBAL_PITCH_ACCEL_RADPS2,
+        config.vehicle.gimbal_dynamics.pitch_max_acceleration_radps2,
+        &config.vehicle.gimbal_dynamics,
     );
     dynamics.yaw_velocity_radps = yaw_velocity;
     dynamics.pitch_velocity_radps = pitch_velocity;
@@ -511,11 +504,32 @@ mod tests {
     }
 
     #[test]
-    fn gimbal_dynamics_obeys_requested_acceleration_without_teleporting() {
-        let (position, velocity) = step_axis(0.0, 0.0, 1.0, 8.0, 2.0, 0.1);
+    fn gimbal_dynamics_uses_actuator_limit_and_acceleration_feedforward() {
+        let config = GimbalDynamicsConfig::default();
+        let (position, velocity) = step_axis(0.0, 0.0, 1.0, 8.0, 2.0, 0.01, &config);
 
         assert!(position > 0.0 && position < 1.0);
-        assert!((velocity - 0.2).abs() < 1e-6);
+        assert!((velocity - 1.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn near_zero_planner_acceleration_does_not_freeze_the_actuator() {
+        let config = GimbalDynamicsConfig::default();
+        let (_, velocity) = step_axis(0.0, 0.0, 0.2, 0.0, 1e-4, 0.01, &config);
+
+        assert!(
+            velocity > 0.9,
+            "near-zero feed-forward limited actuator: {velocity}"
+        );
+    }
+
+    #[test]
+    fn reaching_setpoint_drops_impossible_residual_velocity() {
+        let config = GimbalDynamicsConfig::default();
+        let (position, velocity) = step_axis(0.0, 5.0, 0.01, 0.0, 0.0, 0.01, &config);
+
+        assert!((position - 0.01).abs() < 1e-6);
+        assert!((velocity - 1.0).abs() < 1e-6);
     }
 
     #[test]
@@ -529,14 +543,16 @@ mod tests {
 
     #[test]
     fn gimbal_dynamics_caps_requested_speed() {
-        let (_, velocity) = step_axis(0.0, 0.0, 3.0, 100.0, 1000.0, 1.0);
+        let config = GimbalDynamicsConfig::default();
+        let (_, velocity) = step_axis(0.0, 0.0, 3.0, 100.0, 1000.0, 1.0, &config);
 
-        assert!(velocity <= MAX_GIMBAL_SPEED_RADPS);
+        assert!(velocity <= config.max_speed_radps);
     }
 
     #[test]
     fn gimbal_dynamics_closes_position_error_when_feedforward_rate_is_zero() {
-        let (position, velocity) = step_axis(0.0, 0.0, 1.0, 0.0, 0.0, 0.1);
+        let config = GimbalDynamicsConfig::default();
+        let (position, velocity) = step_axis(0.0, 0.0, 1.0, 0.0, 0.0, 0.1, &config);
 
         assert!(position > 0.05, "position loop did not move: {position}");
         assert!(
@@ -547,11 +563,12 @@ mod tests {
 
     #[test]
     fn gimbal_pitch_dynamics_never_exceeds_mechanical_limit() {
+        let config = GimbalDynamicsConfig::default();
         let mut position = 0.0;
         let mut velocity = 0.0;
 
         for _ in 0..8 {
-            (position, velocity) = step_axis(position, velocity, 1.2, 8.0, 40.0, 0.1);
+            (position, velocity) = step_axis(position, velocity, 1.2, 8.0, 40.0, 0.1, &config);
         }
 
         assert!(

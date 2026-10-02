@@ -63,6 +63,14 @@ max_speed = 8.0                 # 车辆最大平移速度，单位 m/s
 linear_acceleration = 12.0      # 车辆线加速度，单位 m/s^2，普通 WASD 也能快速起步
 acceleration_exponent = 2.5    # 非线性加速曲线指数
 
+[vehicle.gimbal_dynamics]
+# 真机参考：26_tunnel_sentry 的小云台为 500 Hz IMU 角度环 + 速度环，DM4310 减速比 1:1。
+# 这里配置等效闭环响应；视觉侧 sentry.yaml 的 MPC/PID 参数保持不变。
+max_speed_radps = 30.0                   # DM4310 固件速度范围，rad/s
+yaw_max_acceleration_radps2 = 50.0       # 与 sentry.yaml max_yaw_acc 一致
+pitch_max_acceleration_radps2 = 100.0    # 与 sentry.yaml max_pitch_acc 一致
+position_kp = 24.0                       # 等效位置环带宽；原硬编码 8 导致平移跟随过慢
+
 [mecanum]
 wheel_radius_m = 0.076          # 轮半径，单位 m
 half_wheelbase_m = 0.18         # 前后轮距的一半，单位 m
